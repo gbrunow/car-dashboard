@@ -3,17 +3,17 @@
 
 #include "datatypes.h"
 
-/*	tdTurningCommands é um tipo de dado que enumera quais os possíveis valores enviados pela Camada de Abstracao de Hardware como
+/*	tdTurningCommands ï¿½ um tipo de dado que enumera quais os possï¿½veis valores enviados pela Camada de Abstracao de Hardware como
 	resposta aos comandos da alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante")
 */
 typedef enum {
-	command_None,	// A alavanca está na posicao central
-	command_Left,	// A alavanca está na posicao de "seta para a esquerda"
-	command_Right	// A alavanca está na posicao de "seta para a direita"
+	command_None,	// A alavanca estï¿½ na posicao central
+	command_Left,	// A alavanca estï¿½ na posicao de "seta para a esquerda"
+	command_Right	// A alavanca estï¿½ na posicao de "seta para a direita"
 } tdTurningCommands;
 
-/*	tuCommand é um tipo de dado que possui uma estrutura com as informacoes sobre os sinalizadores.
-	- TurnCommands: o comando da alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver também tdTurningCommands
+/*	tuCommand ï¿½ um tipo de dado que possui uma estrutura com as informacoes sobre os sinalizadores.
+	- TurnCommands: o comando da alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver tambï¿½m tdTurningCommands
 	- Alert: indica se o Pisca-Alerta esta ou nao ligado
 */
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
 // Inicializa a Camada de Abstracao de Hardware.
 void InitHAL();
 
-// Metodo que retorna o estado da  alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver também tuCommand
+// Metodo que retorna o estado da  alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver tambï¿½m tuCommand
 tuCommand getTurnCommand();
 
 /* Liga ou desliga o sinalizador direito.
@@ -42,5 +42,13 @@ void ToggleTurnSignalRight();
 
 // Inverte o estado do sinalizador esquerdo. Se estava apagado, acende. Se estava aceso, apaga.
 void ToggleTurnSignalLeft();
+
+boolean readPinTurnSignal_Right();
+
+boolean readPinTurnSignal_Left();
+
+void moveTo(int, int);
+
+void task_physicalProcess(void *pParam);
 
 #endif
