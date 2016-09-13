@@ -49,6 +49,6 @@ boolean readPinTurnSignal_Left();
 
 void moveTo(int, int);
 
-void task_physicalProcess(void *pParam);
+void printTurnSignals();
 
 #endif

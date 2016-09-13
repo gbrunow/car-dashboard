@@ -8,6 +8,14 @@
 #include "hal.h"
 #include "sm.h"
 
+void task_StateMachine(void *pvParameters);
+void task_BlinkLeft(void *pvParameters);
+void task_BlinkRight(void *pvParameters);
+void task_Blink(void *pvParameters);
+
+TaskHandle_t blinkLeftHandle;
+TaskHandle_t blinkRightHandle;
+
 // Esta ser� a sua m�quina de estados
 StateMachine smBlink;
 
@@ -41,28 +49,36 @@ STATE(alertState){
 	if (FIRST){
 		TurnSignalLeft(0);
 		TurnSignalRight(0);
+		xTaskCreate(task_Blink, "task blink left", 1000, ToggleTurnSignalLeft, 1, &blinkLeftHandle);
+		xTaskCreate(task_Blink, "task blink right", 1000, ToggleTurnSignalRight, 1, &blinkRightHandle);
 	}
 
 	tuCommand command = getTurnCommand();
 	if (command.Alert == 0){
 		NEXT_STATE(initialState);
+		vTaskDelete(blinkLeftHandle);
+		vTaskDelete(blinkRightHandle);
 	}
 }
 
 STATE(leftState) {
 	if (FIRST){
 		TurnSignalRight(0);
+		xTaskCreate(task_Blink, "task blink left", 1000, ToggleTurnSignalLeft, 1, &blinkLeftHandle);
 	}
 	else {
 		tuCommand command = getTurnCommand();
 
 		if (command.Alert == 1){
+			vTaskDelete(blinkLeftHandle);
 			NEXT_STATE(alertState);
 		}
 		else if (command.TurnCommands == command_Right){
+			vTaskDelete(blinkLeftHandle);
 			NEXT_STATE(rightState);
 		}
 		else if (command.TurnCommands == command_None){
+			vTaskDelete(blinkLeftHandle);
 			NEXT_STATE(initialState);
 		}
 	}
@@ -72,31 +88,31 @@ STATE(leftState) {
 STATE(rightState) {
 	if (FIRST){
 		TurnSignalLeft(0);
+		xTaskCreate(task_Blink, "task blink right", 1000, ToggleTurnSignalRight, 1, &blinkRightHandle);
 	}
 	else {
 		tuCommand command = getTurnCommand();
 
 		if (command.Alert == 1){
+			vTaskDelete(blinkRightHandle);
 			NEXT_STATE(alertState);
 		}
 		else if (command.TurnCommands == command_Left){
+			vTaskDelete(blinkRightHandle);
 			NEXT_STATE(leftState);
 		}
 		else if (command.TurnCommands == command_None){
+			vTaskDelete(blinkRightHandle);
 			NEXT_STATE(initialState);
 		}
 	}
 }
 
-void task_StateMachine(void *pvParameters);
-void task_BlinkLeft(void *pvParameters);
-void task_BlinkRight(void *pvParameters);
 
 int main_(void) {
 
-	xTaskCreate(task_StateMachine, "task state machine", 1000, NULL, 1, NULL);
-	xTaskCreate(task_BlinkLeft, "task blink left", 1000, NULL, 1, NULL);
-	xTaskCreate(task_BlinkRight, "task blink right", 1000, NULL, 1, NULL);
+	InitHAL();
+	INIT(smBlink, initialState);
 
 	vTaskStartScheduler();
 
@@ -104,31 +120,14 @@ int main_(void) {
 	return 0;
 }
 
-// TODO: implemente aqui os codigos das Tasks
-void task_BlinkLeft(void *pParam) {
-
-	for (;;) {
-		if (COMPARE(smBlink, alertState) || COMPARE(smBlik, leftState)){
-			ToggleTurnSignalLeft();
-		}
+void task_Blink(void (*blinkFunction)(void)){
+	for (;;){
+		blinkFunction();
 		vTaskDelay(333);
 	}
 }
 
-void task_BlinkRight(void *pParam) {
-	for (;;) {
-		if (COMPARE(smBlink, alertState) || COMPARE(smBlik, rightState)){
-			ToggleTurnSignalRight();
-		}
-		vTaskDelay(333);
-	}
-}
 
-void task_StateMachine(void *pParam) {
-	InitHAL();
-	INIT(smBlink, initialState);
-
-	for (;;) {
-		EXEC(smBlink);
-	}
+void vApplicationIdleHook(void *pParam){
+	EXEC(smBlink);
 }
