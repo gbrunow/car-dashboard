@@ -13,6 +13,7 @@ Camada de Abstracao do Hardware (HAL) para execucao no Visual Studio
 // Variaveis da Camada de Abstracao do Hardware (HAL)
 boolean pinTurnSignal_LEFT;		// Representa o estado do pino de saida do microcontrolador ligado ao sinalizador ESQUERDO
 boolean pinTurnSignal_RIGHT;	// Representa o estado do pino de saida do microcontrolador ligado ao sinalizador DIREITO
+boolean pinBreakSignal;
 tuCommand lastCommand;			// Armazena o estado atual dos sinalizadores. Veja tambem: tuCommand
 
 void task_Key(void *pvParameters);
@@ -42,23 +43,34 @@ void task_Key(void *pParam){
 				lastCommand.Alert = !lastCommand.Alert;
 				break;
 
+			case 'i':
+				lastCommand.Ignition = !lastCommand.Ignition;
+				break;
+
+			case 'b':
+				lastCommand.Break = !lastCommand.Break;
+				break;
+
 			default:
 
 				break;
 			}
 		}
 		else {
-			vTaskDelay(1);
+			vTaskDelay(10);
 		}
 	}
 }
+
+void printSignals(void *pParam);
 
 // Inicializa a Camada de Abstracao de Hardware.
 void InitHAL() {
 	TurnSignalLeft(0);
 	TurnSignalRight(0);
+	BreakSignal(0);
 	xTaskCreate(task_Key, "task key", 1000, NULL, 1, NULL);
-	xTaskCreate(printTurnSignals, "task print", 1000, NULL, 1, NULL);
+	xTaskCreate(printSignals, "task print", 1000, NULL, 1, NULL);
 }
 // Metodo que retorna o estado da  alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver tamb�m tuCommand
 tuCommand getTurnCommand() {
@@ -70,14 +82,6 @@ tuCommand getTurnCommand() {
 */
 void TurnSignalRight(boolean s) {
 	pinTurnSignal_RIGHT = s;
-
-	/*moveTo(15, 0);
-	if (pinTurnSignal_RIGHT){
-		vPrintString("[>>>]");
-	}
-	else{
-		vPrintString("[   ]");
-	}*/
 }
 
 /* Liga ou desliga o sinalizador esquerdo.
@@ -85,14 +89,10 @@ void TurnSignalRight(boolean s) {
 */
 void TurnSignalLeft(boolean s) {
 	pinTurnSignal_LEFT = s;
+}
 
-	/*moveTo(0, 0);
-	if (pinTurnSignal_LEFT){
-		vPrintString("[<<<]");
-	}
-	else{
-		vPrintString("[   ]");
-	}*/
+void BreakSignal(boolean s){
+	pinBreakSignal = s;
 }
 
 
@@ -106,6 +106,12 @@ void ToggleTurnSignalLeft() {
 	TurnSignalLeft(!pinTurnSignal_LEFT);
 }
 
+void ToggleBreakSignal(){
+	BreakSignal(!pinBreakSignal);
+}
+
+
+
 boolean readPinTurnSignal_Left(){
 	return pinTurnSignal_LEFT;
 }
@@ -114,33 +120,50 @@ boolean readPinTurnSignal_Right(){
 	return pinTurnSignal_RIGHT;
 }
 
-void printTurnSignals(){
+void printSignals(void *pParam){
 	boolean prevLeft = pinTurnSignal_LEFT;
 	boolean prevRight = pinTurnSignal_RIGHT;
+	boolean prevBreak = pinBreakSignal;
 	boolean first = 1;
 
 	for (;;){
 		if (prevLeft != pinTurnSignal_LEFT || first){
 			moveTo(0, 0);
 			if (pinTurnSignal_LEFT){
-				vPrintString("[<<<]");
+				vPrintString("[<<<");
 			}
 			else{
-				vPrintString("[   ]");
+				vPrintString("[   ");
 			}
-
-			prevLeft = pinTurnSignal_LEFT;
-		}
+		}		
 
 		if (prevRight != pinTurnSignal_RIGHT || first){
-			moveTo(15, 0);
+			moveTo(19, 0);
 			if (pinTurnSignal_RIGHT){
-				vPrintString("[>>>]");
+				vPrintString(">>>]");
 			}
 			else{
-				vPrintString("[   ]");
+				vPrintString("   ]");
+			}
+			
+		}
+
+		if (prevBreak != pinBreakSignal || prevLeft != pinTurnSignal_LEFT || prevRight != pinTurnSignal_RIGHT || first){
+			if (pinBreakSignal){
+				moveTo(4, 0);
+				vPrintString("|||]");
+				moveTo(15, 0);
+				vPrintString("[|||");
+			}
+			else {
+				moveTo(4, 0);
+				vPrintString("   ]");
+				moveTo(15, 0);
+				vPrintString("[   ");
 			}
 
+			prevBreak = pinBreakSignal;
+			prevLeft = pinTurnSignal_LEFT;
 			prevRight = pinTurnSignal_RIGHT;
 		}
 		first = 0;

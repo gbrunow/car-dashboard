@@ -19,6 +19,8 @@ typedef enum {
 typedef struct {
 		tdTurningCommands TurnCommands : 3;
 		uint8 Alert : 1;
+		uint8 Break : 1;
+		uint8 Ignition : 1;
 } tuCommand;
 
 // Inicializa a Camada de Abstracao de Hardware.
@@ -37,11 +39,15 @@ void TurnSignalRight(boolean s);
 */
 void TurnSignalLeft(boolean s);
 
+void BreakSignal();
+
 // Inverte o estado do sinalizador direito. Se estava apagado, acende. Se estava aceso, apaga.
 void ToggleTurnSignalRight();
 
 // Inverte o estado do sinalizador esquerdo. Se estava apagado, acende. Se estava aceso, apaga.
 void ToggleTurnSignalLeft();
+
+void ToggleBreakSignal();
 
 boolean readPinTurnSignal_Right();
 
@@ -49,6 +55,6 @@ boolean readPinTurnSignal_Left();
 
 void moveTo(int, int);
 
-void printTurnSignals();
+void printSignals();
 
 #endif
