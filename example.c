@@ -15,6 +15,7 @@ void task_Blink(void *pvParameters);
 
 TaskHandle_t blinkLeftHandle = NULL;
 TaskHandle_t blinkRightHandle = NULL;
+tuCommand command;
 
 // TODO: defina aqui as assinaturas dos estados da m�quina de estados
 STATE(initialState);
@@ -25,7 +26,7 @@ STATE(rightState);
 
 // TODO: crie aqui o c�digo dos estados da m�quina de estados
 STATE(initialState){
-	tuCommand command = getTurnCommand();
+	getCommand(&command);
 
 	if (FIRST){
 		if (blinkLeftHandle != NULL){
@@ -68,7 +69,7 @@ STATE(turnedOnState){
 		TurnSignalRight(0);
 	}
 	else {
-		tuCommand command = getTurnCommand();
+		getCommand(&command);
 
 		if (command.Alert == 1){
 			NEXT_STATE(alertState);
@@ -110,7 +111,8 @@ STATE(alertState){
 		xTaskCreate(task_Blink, "task blink right", 1000, ToggleTurnSignalRight, 1, &blinkRightHandle);
 	}
 	else {
-		tuCommand command = getTurnCommand();
+		getCommand(&command);
+
 		if (command.Alert == 0){
 			NEXT_STATE(initialState);			
 		}
@@ -119,6 +121,7 @@ STATE(alertState){
 
 STATE(leftState) {
 	if (FIRST){
+		getCommand(&command);
 		if (blinkLeftHandle != NULL){
 			vTaskDelete(blinkLeftHandle);
 			blinkLeftHandle = NULL;
@@ -132,7 +135,7 @@ STATE(leftState) {
 		xTaskCreate(task_Blink, "task blink left", 1000, ToggleTurnSignalLeft, 1, &blinkLeftHandle);
 	}
 	else {
-		tuCommand command = getTurnCommand();
+		getCommand(&command);
 
 		if (command.Alert == 1){
 			NEXT_STATE(alertState);
@@ -171,7 +174,7 @@ STATE(rightState) {
 		xTaskCreate(task_Blink, "task blink right", 1000, ToggleTurnSignalRight, 1, &blinkRightHandle);
 	}
 	else {
-		tuCommand command = getTurnCommand();
+		getCommand(&command);
 
 		if (command.Alert == 1){
 			NEXT_STATE(alertState);
@@ -202,12 +205,9 @@ STATE(breakOff){
 	if (FIRST){
 		BreakSignal(0);
 	}
-	else {
-		tuCommand command = getTurnCommand();
-
-		if (command.Ignition == 1 && command.Break == 1){
-			NEXT_STATE(breakOn);
-		}
+	else if (command.Ignition == 1 && command.Break == 1){
+		getCommand(&command);
+		NEXT_STATE(breakOn);
 	}
 }
 
@@ -215,12 +215,9 @@ STATE(breakOn){
 	if (FIRST){
 		BreakSignal(1);
 	}
-	else {
-		tuCommand command = getTurnCommand();
-
-		if (command.Ignition == 0 || command.Break == 0){
-			NEXT_STATE(breakOff);
-		}
+	else if (command.Ignition == 0 || command.Break == 0){
+		NEXT_STATE(breakOff);
+		getCommand(&command);
 	}
 }
 

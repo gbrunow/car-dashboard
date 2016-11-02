@@ -7,6 +7,7 @@ Camada de Abstracao do Hardware (HAL) para execucao no Visual Studio
 #include "task.h"
 #include <stdio.h>
 #include <conio.h>
+#include "queue.h"
 
 // IMPORTANTE: fique a vontade para criar outros metodos e variaveis
 
@@ -15,12 +16,13 @@ boolean pinTurnSignal_LEFT;		// Representa o estado do pino de saida do microcon
 boolean pinTurnSignal_RIGHT;	// Representa o estado do pino de saida do microcontrolador ligado ao sinalizador DIREITO
 boolean pinBreakSignal;
 tuCommand lastCommand;			// Armazena o estado atual dos sinalizadores. Veja tambem: tuCommand
+xQueueHandle xCommQueue;
+const portTickType xTicksToWait = 100 / portTICK_RATE_MS;
 
 void task_Key(void *pvParameters);
 
 // Esta � a task que recebe os comandos do teclado e atualiza o valor de lastCommand
-void task_Key(void *pParam){
-
+void task_Key(void *pParam){	
 	int key;
 	int n;
 	for (;;){
@@ -55,6 +57,12 @@ void task_Key(void *pParam){
 
 				break;
 			}
+
+			portBASE_TYPE xStatus = xQueueSendToBack(xCommQueue, &lastCommand, xTicksToWait);
+
+			if (xStatus != pdPASS){
+				vPrintString("\n\n Fila de comandos cheia.");
+			}
 		}
 		else {
 			vTaskDelay(10);
@@ -69,12 +77,22 @@ void InitHAL() {
 	TurnSignalLeft(0);
 	TurnSignalRight(0);
 	BreakSignal(0);
+	xCommQueue = xQueueCreate(10, sizeof(tuCommand));
 	xTaskCreate(task_Key, "task key", 1000, NULL, 1, NULL);
 	xTaskCreate(printSignals, "task print", 1000, NULL, 1, NULL);
 }
 // Metodo que retorna o estado da  alavanca de comando dos sinalizadores ("alavanda das setas junto ao volante"). Ver tamb�m tuCommand
 tuCommand getTurnCommand() {
 	return lastCommand;
+}
+
+void getCommand(tuCommand *command){
+	tuCommand tmpCommand;
+	portBASE_TYPE xStatus = xQueueReceive(xCommQueue, &tmpCommand, xTicksToWait);
+
+	if (xStatus == pdPASS){
+		*command = tmpCommand;
+	}
 }
 
 /* Liga ou desliga o sinalizador direito.

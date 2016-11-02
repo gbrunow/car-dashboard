@@ -18,9 +18,9 @@ typedef enum {
 */
 typedef struct {
 		tdTurningCommands TurnCommands : 3;
+		uint8 Ignition : 1;
 		uint8 Alert : 1;
 		uint8 Break : 1;
-		uint8 Ignition : 1;
 } tuCommand;
 
 // Inicializa a Camada de Abstracao de Hardware.
@@ -56,5 +56,7 @@ boolean readPinTurnSignal_Left();
 void moveTo(int, int);
 
 void printSignals();
+
+void getCommand(tuCommand*);
 
 #endif
